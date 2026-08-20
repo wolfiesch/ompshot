@@ -95,6 +95,31 @@ describe("helpers", () => {
     expect(mimeTypeForFormat("jpeg")).toBe("image/jpeg");
     expect(mimeTypeForFormat("webp")).toBe("image/webp");
   });
+
+  test("resolves iris binary path with custom override and env fallbacks", () => {
+    const { resolveIrisBinary } = require("./src/index");
+
+    // 1. Explicit argument override
+    expect(resolveIrisBinary("/custom/bin/iris")).toBe("/custom/bin/iris");
+
+    // 2. IRIS_PATH env override
+    expect(
+      resolveIrisBinary(undefined, { IRIS_PATH: "/opt/iris/bin/iris" })
+    ).toBe("/opt/iris/bin/iris");
+
+    // 3. IRIS_BIN env override
+    expect(
+      resolveIrisBinary(undefined, { IRIS_BIN: "/usr/local/bin/iris" })
+    ).toBe("/usr/local/bin/iris");
+
+    // 4. Fallback to command name 'iris' when non-existent custom CARGO_HOME / empty PATH is provided
+    expect(
+      resolveIrisBinary(undefined, {
+        CARGO_HOME: "/nonexistent/cargo",
+        PATH: "/empty",
+      })
+    ).toBe("iris");
+  });
 });
 
 describe("tool registration", () => {

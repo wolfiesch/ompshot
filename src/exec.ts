@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import * as fs from "node:fs/promises";
+import * as fsSync from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { promisify } from "node:util";
@@ -25,10 +26,47 @@ export function mimeTypeForFormat(format: string): string {
   return "image/png";
 }
 
-export function resolveIrisBinary(customPath?: string): string {
-  if (customPath) return customPath;
-  const cargoPath = path.join(os.homedir(), ".cargo", "bin", "iris");
-  return cargoPath;
+export function resolveIrisBinary(
+  customPath?: string,
+  env: Record<string, string | undefined> = process.env
+): string {
+  if (customPath && customPath.trim().length > 0) {
+    return customPath.trim();
+  }
+
+  const envPath = env.IRIS_PATH || env.IRIS_BIN;
+  if (envPath && envPath.trim().length > 0) {
+    return envPath.trim();
+  }
+
+  const candidates: string[] = [];
+  if (env.CARGO_HOME) {
+    candidates.push(path.join(env.CARGO_HOME, "bin", "iris"));
+  } else {
+    const home = env.HOME || os.homedir();
+    candidates.push(path.join(home, ".cargo", "bin", "iris"));
+  }
+
+  for (const candidate of candidates) {
+    try {
+      if (fsSync.existsSync(candidate)) {
+        return candidate;
+      }
+    } catch {}
+  }
+
+  const pathEnv = env.PATH || "";
+  for (const dir of pathEnv.split(path.delimiter)) {
+    if (!dir) continue;
+    const candidate = path.join(dir, "iris");
+    try {
+      if (fsSync.existsSync(candidate)) {
+        return candidate;
+      }
+    } catch {}
+  }
+
+  return "iris";
 }
 
 export function buildIrisArgs(params: IrisParams, targetPath: string): string[] {
