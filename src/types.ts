@@ -88,9 +88,11 @@ export interface ToolDefinition {
 }
 
 export interface ExtensionAPI {
-  zod?: {
-    z: unknown;
-  };
+  zod?:
+    | {
+        z: unknown;
+      }
+    | unknown;
   registerTool(tool: ToolDefinition): void;
-  setLabel?(label: string): void;
+  setLabel?(labelOrEntryId: string, label?: string): void;
 }

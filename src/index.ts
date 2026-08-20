@@ -21,7 +21,8 @@ function resolveSchemaBuilder(pi: ExtensionAPI): SchemaBuilder {
 export default function ompshotExtension(pi: ExtensionAPI): void {
   const z = resolveSchemaBuilder(pi);
 
-  if (typeof pi.setLabel === "function") {
+  // Only set the extension-level display label when running in OMP (which supports the 1-arg overload)
+  if (Boolean(pi.zod) && typeof pi.setLabel === "function") {
     pi.setLabel("Iris Screenshot");
   }
 

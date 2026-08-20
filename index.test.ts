@@ -123,12 +123,16 @@ describe("helpers", () => {
 });
 
 describe("tool registration", () => {
-  test("registers iris tool with OMP zod schema", () => {
+  test("registers iris tool and calls 1-arg setLabel with OMP zod schema", () => {
     let registeredTool: ToolDefinition | null = null;
+    let extensionLabel = "";
     const mockPi: ExtensionAPI = {
       zod: { z },
       registerTool: (t) => {
         registeredTool = t;
+      },
+      setLabel: (label: string) => {
+        extensionLabel = label;
       },
     };
 
@@ -136,20 +140,26 @@ describe("tool registration", () => {
     expect(registeredTool).not.toBeNull();
     expect(registeredTool!.name).toBe("iris");
     expect(registeredTool!.label).toBe("Iris Screenshot");
+    expect(extensionLabel).toBe("Iris Screenshot");
   });
 
-  test("registers iris tool with TypeBox adapter when zod is absent", () => {
+  test("registers iris tool with TypeBox adapter without calling 1-arg setLabel in vanilla Pi", () => {
     let registeredTool: ToolDefinition | null = null;
-    const mockPi: ExtensionAPI = {
+    let setLabelCalled = false;
+    const mockVanillaPi: ExtensionAPI = {
       registerTool: (t) => {
         registeredTool = t;
       },
+      setLabel: (_entryId: string, _label: string) => {
+        setLabelCalled = true;
+      },
     };
 
-    ompshotExtension(mockPi);
+    ompshotExtension(mockVanillaPi);
     expect(registeredTool).not.toBeNull();
     expect(registeredTool!.name).toBe("iris");
     expect(registeredTool!.parameters).toBeDefined();
+    expect(setLabelCalled).toBe(false);
   });
 });
 
