@@ -1,0 +1,53 @@
+{
+  "name": "ompshot",
+  "version": "0.1.0",
+  "description": "High-fidelity website and element screenshot tool for Pi and Oh My Pi coding agents powered by Iris.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/wolfiesch/ompshot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wolfiesch/ompshot.git"
+  },
+  "keywords": [
+    "pi-extension",
+    "pi-coding-agent",
+    "mariozechner-pi",
+    "oh-my-pi",
+    "omp",
+    "screenshot",
+    "iris",
+    "visual-testing",
+    "headless-chrome",
+    "agent-tools",
+    "coding-agent"
+  ],
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "omp": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.52"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "typescript": "^5.9.2",
+    "zod": "^3.24.2"
+  }
+}
