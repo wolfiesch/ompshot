@@ -4,7 +4,7 @@ import { createTypeBoxAdapter } from "./schema";
 import type { ExtensionAPI, SchemaBuilder, ToolDefinition } from "./types";
 
 export { buildIrisArgs, executeIris, formatBytes, mimeTypeForFormat, resolveIrisBinary } from "./exec";
-export { renderCall, renderResult } from "./render";
+export { FallbackTextComponent, createTextComponent, extractTheme, renderCall, renderResult } from "./render";
 export { createTypeBoxAdapter } from "./schema";
 export type * from "./types";
 

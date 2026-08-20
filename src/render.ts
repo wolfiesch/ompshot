@@ -1,18 +1,54 @@
 import { formatBytes } from "./exec";
 import type { IrisJsonSuccess, IrisParams, Theme, ToolExecutionResult } from "./types";
 
-export function renderCall(
-  args: IrisParams,
-  _options: unknown,
-  theme?: Theme
-): unknown {
-  let TextClass: { new (text: string, x: number, y: number): unknown } | undefined;
+export class FallbackTextComponent {
+  constructor(public text: string) {}
+
+  render(): string[] {
+    return [this.text];
+  }
+
+  invalidate(): void {}
+}
+
+export function extractTheme(arg2: unknown, arg3?: unknown): Theme | undefined {
+  if (arg2 && typeof arg2 === "object" && "fg" in arg2 && typeof (arg2 as Record<string, unknown>).fg === "function") {
+    return arg2 as Theme;
+  }
+  if (arg3 && typeof arg3 === "object" && "fg" in arg3 && typeof (arg3 as Record<string, unknown>).fg === "function") {
+    return arg3 as Theme;
+  }
+  return undefined;
+}
+
+export function createTextComponent(text: string): unknown {
   try {
-    const tuiModule = require("@oh-my-pi/pi-tui") as {
+    const ompTui = require("@oh-my-pi/pi-tui") as {
       Text?: { new (text: string, x: number, y: number): unknown };
     };
-    TextClass = tuiModule.Text;
+    if (ompTui?.Text) {
+      return new ompTui.Text(text, 0, 0);
+    }
   } catch {}
+
+  try {
+    const piTui = require("@mariozechner/pi-tui") as {
+      Text?: { new (text: string, x: number, y: number): unknown };
+    };
+    if (piTui?.Text) {
+      return new piTui.Text(text, 0, 0);
+    }
+  } catch {}
+
+  return new FallbackTextComponent(text);
+}
+
+export function renderCall(
+  args: IrisParams,
+  arg2: unknown,
+  arg3?: unknown
+): unknown {
+  const theme = extractTheme(arg2, arg3);
 
   const flags: string[] = [];
   if (args.selector) flags.push(`--selector "${args.selector}"`);
@@ -26,7 +62,7 @@ export function renderCall(
   if (!theme) {
     const flagText = flags.length > 0 ? " " + flags.join(" ") : "";
     const raw = `iris ${args.url || ""}${flagText}`;
-    return TextClass ? new TextClass(raw, 0, 0) : raw;
+    return createTextComponent(raw);
   }
 
   const flagText = flags.length > 0 ? " " + theme.fg("muted", flags.join(" ")) : "";
@@ -35,29 +71,20 @@ export function renderCall(
     theme.fg("accent", args.url || "") +
     flagText;
 
-  if (TextClass) {
-    return new TextClass(label, 0, 0);
-  }
-  return label;
+  return createTextComponent(label);
 }
 
 export function renderResult(
   result: ToolExecutionResult,
-  _options: unknown,
-  theme?: Theme
+  arg2: unknown,
+  arg3?: unknown
 ): unknown {
-  let TextClass: { new (text: string, x: number, y: number): unknown } | undefined;
-  try {
-    const tuiModule = require("@oh-my-pi/pi-tui") as {
-      Text?: { new (text: string, x: number, y: number): unknown };
-    };
-    TextClass = tuiModule.Text;
-  } catch {}
+  const theme = extractTheme(arg2, arg3);
 
   if (result.isError) {
     const rawErr = result.content?.[0]?.text ?? "Iris capture failed";
     const errorText = theme ? theme.fg("error", rawErr) : rawErr;
-    return TextClass ? new TextClass(errorText, 0, 0) : errorText;
+    return createTextComponent(errorText);
   }
 
   const details = result.details as IrisJsonSuccess | undefined;
@@ -72,5 +99,5 @@ export function renderResult(
     summary = theme ? theme.fg("success", rawText) : rawText;
   }
 
-  return TextClass ? new TextClass(summary, 0, 0) : summary;
+  return createTextComponent(summary);
 }

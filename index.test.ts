@@ -169,20 +169,39 @@ describe("rendering", () => {
     bold: (text: string) => `<b>${text}</b>`,
   };
 
-  test("renders call with url and flags", () => {
+  test("renders call under OMP signature (args, options, theme)", () => {
     const params: IrisParams = {
       url: "https://example.com",
       selector: "#main",
       dark: true,
     };
-    const rendered = String(renderCall(params, {}, mockTheme));
-    expect(rendered).toContain("iris");
-    expect(rendered).toContain("https://example.com");
-    expect(rendered).toContain("--selector \"#main\"");
-    expect(rendered).toContain("--dark");
+    const component = renderCall(params, {}, mockTheme) as { render(): string[] };
+    expect(component).toHaveProperty("render");
+    const lines = component.render();
+    const joined = lines.join("\n");
+    expect(joined).toContain("iris");
+    expect(joined).toContain("https://example.com");
+    expect(joined).toContain("--selector \"#main\"");
+    expect(joined).toContain("--dark");
   });
 
-  test("renders successful capture result", () => {
+  test("renders call under vanilla Pi signature (args, theme, context)", () => {
+    const params: IrisParams = {
+      url: "https://example.com",
+      selector: "#hero",
+      padding: 12,
+    };
+    const component = renderCall(params, mockTheme, { cwd: "/tmp" }) as { render(): string[]; invalidate(): void };
+    expect(component).toHaveProperty("render");
+    expect(component).toHaveProperty("invalidate");
+    const joined = component.render().join("\n");
+    expect(joined).toContain("iris");
+    expect(joined).toContain("https://example.com");
+    expect(joined).toContain("--selector \"#hero\"");
+    expect(joined).toContain("--padding 12");
+  });
+
+  test("renders successful capture result under OMP and vanilla Pi signatures", () => {
     const result: ToolExecutionResult = {
       content: [{ type: "image" }, { type: "text", text: "Captured" }],
       details: {
@@ -197,19 +216,29 @@ describe("rendering", () => {
         bytes: 10240,
       },
     };
-    const rendered = String(renderResult(result, {}, mockTheme));
-    expect(rendered).toContain("800×600");
-    expect(rendered).toContain("@2x");
-    expect(rendered).toContain("10.0 KB");
-    expect(rendered).toContain("/tmp/shot.png");
+
+    // OMP signature (result, options, theme)
+    const ompComp = renderResult(result, {}, mockTheme) as { render(): string[] };
+    const ompJoined = ompComp.render().join("\n");
+    expect(ompJoined).toContain("800×600");
+    expect(ompJoined).toContain("@2x");
+    expect(ompJoined).toContain("10.0 KB");
+    expect(ompJoined).toContain("/tmp/shot.png");
+
+    // Vanilla Pi signature (result, theme, context)
+    const piComp = renderResult(result, mockTheme, {}) as { render(): string[] };
+    const piJoined = piComp.render().join("\n");
+    expect(piJoined).toContain("800×600");
+    expect(piJoined).toContain("@2x");
   });
 
-  test("renders error result", () => {
+  test("renders error result as valid component", () => {
     const result: ToolExecutionResult = {
       content: [{ type: "text", text: "Iris capture failed: timeout" }],
       isError: true,
     };
-    const rendered = String(renderResult(result, {}, mockTheme));
-    expect(rendered).toContain("Iris capture failed: timeout");
+    const component = renderResult(result, mockTheme, {}) as { render(): string[] };
+    const joined = component.render().join("\n");
+    expect(joined).toContain("Iris capture failed: timeout");
   });
 });
